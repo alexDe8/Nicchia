@@ -299,7 +299,8 @@
                     { brand: "Zendesk", niche: "Aziende con esigenze di customer service", lesson: "Ascolta la tua nicchia: ridurre l'attrito e risolvere problemi adiacenti sono potenti motori di crescita.", icon: "💬" }
                 ]
             };
-
+        
+            // Variabili per la navigazione e sezioni generiche
             const mainNav = document.getElementById('main-nav');
             const mobileNav = document.getElementById('mobile-nav');
             const contentSections = document.querySelectorAll('.content-section');
@@ -307,27 +308,27 @@
             const frameworkDetailsContainer = document.getElementById('framework-details');
             const caseStudiesContainer = document.getElementById('case-studies-container');
             
-            // Elementi per le Funzioni IA
+            // Variabili per la Funzione IA 1: Idee di Nicchia
             const generateNicheBtn = document.getElementById('generate-niche-ideas');
             const nicheInput = document.getElementById('niche-input');
             const nicheLoader = document.getElementById('niche-loader');
             const nicheResults = document.getElementById('niche-results');
-
+        
+            // Variabili per la Funzione IA 2: Fossati Competitivi (ECCO LA PARTE CHE PROBABILMENTE MANCAVA)
             const generateMoatBtn = document.getElementById('generate-moat-ideas');
             const moatInput = document.getElementById('moat-input');
             const moatLoader = document.getElementById('moat-loader');
             const moatResults = document.getElementById('moat-results');
-
+        
             // --- 2. FUNZIONI PRINCIPALI ---
-
-            // Funzione per cambiare la vista/sezione attiva
+        
             function renderView() {
                 mainNav.querySelectorAll('a').forEach(link => link.classList.toggle('active', link.dataset.view === appState.currentView));
                 mobileNav.value = appState.currentView;
                 contentSections.forEach(section => section.classList.toggle('active', section.id === appState.currentView));
                 window.scrollTo(0, 0);
             }
-
+        
             function updateView(viewName) {
                 if (appState.currentView !== viewName) {
                     appState.currentView = viewName;
@@ -335,16 +336,14 @@
                     renderView();
                 }
             }
-
-            // Funzione per mostrare i dettagli del framework Python
+        
             function renderFrameworkDetails(fw) {
                 const data = appState.frameworkData[fw];
                 if (!data) return;
                 frameworkSelector.querySelectorAll('button').forEach(btn => btn.classList.toggle('active', btn.dataset.fw === fw));
                 frameworkDetailsContainer.innerHTML = `<div class="${data.color} p-6 rounded-lg border ${data.textColor}"><h4 class="font-bold text-xl">${data.title}</h4><p class="mt-2">${data.description}</p><p class="mt-4 font-semibold">Ideale per: <span class="font-normal">${data.ideale}</span></p></div>`;
             }
-
-            // Funzione per generare le card dei casi di studio
+        
             function renderCaseStudies() {
                 let html = '';
                 appState.caseStudiesData.forEach(study => {
@@ -352,8 +351,7 @@
                 });
                 caseStudiesContainer.innerHTML = html;
             }
-
-            // Funzione per creare il grafico a barre
+        
             function createValidationFunnelChart() {
                 const ctx = document.getElementById('validationFunnelChart').getContext('2d');
                 new Chart(ctx, {
@@ -366,25 +364,24 @@
                 });
             }
             
-            // Funzione UNICA e CORRETTA per chiamare la nostra funzione serverless
             async function callGeminiAPI(prompt, loaderElement, resultsElement) {
                 loaderElement.style.display = 'block';
                 resultsElement.innerHTML = '';
                 resultsElement.style.display = 'none';
-
+        
                 const proxyUrl = '/.netlify/functions/gemini-proxy';
-
+        
                 try {
                     const response = await fetch(proxyUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ prompt: prompt }) 
                     });
-
+        
                     if (!response.ok) {
                         throw new Error(`Errore dal server: ${response.statusText}`);
                     }
-
+        
                     const result = await response.json();
                     
                     if (result.candidates && result.candidates.length > 0) {
@@ -403,10 +400,9 @@
                     resultsElement.style.display = 'block';
                 }
             }
-
+        
             // --- 3. EVENT LISTENERS (colleghiamo i pulsanti alle funzioni) ---
-
-            // Navigazione principale e mobile
+        
             mainNav.addEventListener('click', (e) => {
                 if (e.target.tagName === 'A') {
                     e.preventDefault();
@@ -415,14 +411,12 @@
             });
             
             mobileNav.addEventListener('change', (e) => updateView(e.target.value));
-
-            // Selettore dei framework Python
+        
             frameworkSelector.addEventListener('click', (e) => {
                 const fw = e.target.dataset.fw;
                 if (fw) renderFrameworkDetails(fw);
             });
             
-            // Pulsante 1: Generatore di Idee di Nicchia
             generateNicheBtn.addEventListener('click', () => {
                 const userInput = nicheInput.value.trim();
                 if (userInput) {
@@ -433,8 +427,7 @@
                     nicheResults.style.display = 'block';
                 }
             });
-
-            // Pulsante 2: Generatore di Fossati Competitivi
+        
             generateMoatBtn.addEventListener('click', () => {
                 const userInput = moatInput.value.trim();
                 if (userInput) {
@@ -445,17 +438,14 @@
                     moatResults.style.display = 'block';
                 }
             });
-
-
+        
             // --- 4. INIZIALIZZAZIONE DELLA PAGINA ---
             
-            // Controlla l'hash nell'URL per mostrare la sezione corretta al caricamento
             const initialHash = window.location.hash.replace('#', '');
             if (['strategia', 'ricerca', 'validazione', 'costruzione', 'monetizzazione'].includes(initialHash)) {
                 appState.currentView = initialHash;
             }
             
-            // Esegui le funzioni per popolare la pagina
             renderView();
             renderFrameworkDetails('django');
             createValidationFunnelChart();
