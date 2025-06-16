@@ -282,6 +282,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // --- 1. DEFINIZIONE DELLE VARIABILI PRINCIPALI ---
             const appState = {
                 currentView: 'strategia',
                 frameworkData: {
@@ -306,7 +307,7 @@
             const frameworkDetailsContainer = document.getElementById('framework-details');
             const caseStudiesContainer = document.getElementById('case-studies-container');
             
-            // Gemini Feature Elements
+            // Elementi per le Funzioni IA
             const generateNicheBtn = document.getElementById('generate-niche-ideas');
             const nicheInput = document.getElementById('niche-input');
             const nicheLoader = document.getElementById('niche-loader');
@@ -317,6 +318,9 @@
             const moatLoader = document.getElementById('moat-loader');
             const moatResults = document.getElementById('moat-results');
 
+            // --- 2. FUNZIONI PRINCIPALI ---
+
+            // Funzione per cambiare la vista/sezione attiva
             function renderView() {
                 mainNav.querySelectorAll('a').forEach(link => link.classList.toggle('active', link.dataset.view === appState.currentView));
                 mobileNav.value = appState.currentView;
@@ -332,15 +336,7 @@
                 }
             }
 
-            mainNav.addEventListener('click', (e) => {
-                if (e.target.tagName === 'A') {
-                    e.preventDefault();
-                    updateView(e.target.dataset.view);
-                }
-            });
-            
-            mobileNav.addEventListener('change', (e) => updateView(e.target.value));
-
+            // Funzione per mostrare i dettagli del framework Python
             function renderFrameworkDetails(fw) {
                 const data = appState.frameworkData[fw];
                 if (!data) return;
@@ -348,11 +344,7 @@
                 frameworkDetailsContainer.innerHTML = `<div class="${data.color} p-6 rounded-lg border ${data.textColor}"><h4 class="font-bold text-xl">${data.title}</h4><p class="mt-2">${data.description}</p><p class="mt-4 font-semibold">Ideale per: <span class="font-normal">${data.ideale}</span></p></div>`;
             }
 
-            frameworkSelector.addEventListener('click', (e) => {
-                const fw = e.target.dataset.fw;
-                if (fw) renderFrameworkDetails(fw);
-            });
-
+            // Funzione per generare le card dei casi di studio
             function renderCaseStudies() {
                 let html = '';
                 appState.caseStudiesData.forEach(study => {
@@ -361,6 +353,7 @@
                 caseStudiesContainer.innerHTML = html;
             }
 
+            // Funzione per creare il grafico a barre
             function createValidationFunnelChart() {
                 const ctx = document.getElementById('validationFunnelChart').getContext('2d');
                 new Chart(ctx, {
@@ -373,70 +366,80 @@
                 });
             }
             
+            // Funzione UNICA e CORRETTA per chiamare la nostra funzione serverless
             async function callGeminiAPI(prompt, loaderElement, resultsElement) {
                 loaderElement.style.display = 'block';
                 resultsElement.innerHTML = '';
                 resultsElement.style.display = 'none';
 
-                
                 const proxyUrl = '/.netlify/functions/gemini-proxy';
+
                 try {
                     const response = await fetch(proxyUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
+                        body: JSON.stringify({ prompt: prompt }) 
                     });
 
                     if (!response.ok) {
-                        throw new Error(`Errore API: ${response.statusText}`);
+                        throw new Error(`Errore dal server: ${response.statusText}`);
                     }
 
                     const result = await response.json();
                     
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts &&
-                        result.candidates[0].content.parts.length > 0) {
-                        
+                    if (result.candidates && result.candidates.length > 0) {
                         let text = result.candidates[0].content.parts[0].text;
-                        // Basic markdown to HTML conversion
-                        text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Bold
-                        text = text.replace(/\n/g, '<br>'); // Newlines
+                        text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                        text = text.replace(/\n/g, '<br>');
                         resultsElement.innerHTML = text;
                     } else {
-                        resultsElement.innerHTML = '<p>Non è stato possibile ottenere una risposta valida dall\'IA. Riprova.</p>';
+                        throw new Error('La risposta dell\'IA non è valida o è vuota.');
                     }
                 } catch (error) {
-                    console.error('Errore chiamata Gemini API:', error);
-                    resultsElement.innerHTML = `<p class="text-red-600">Si è verificato un errore durante la generazione della risposta. Controlla la console per i dettagli e riprova.</p>`;
+                    console.error('Errore durante la chiamata alla funzione proxy:', error);
+                    resultsElement.innerHTML = `<p class="text-red-600">Si è verificato un errore. Controlla la console per i dettagli.</p>`;
                 } finally {
                     loaderElement.style.display = 'none';
                     resultsElement.style.display = 'block';
                 }
             }
 
-            generateMoatBtn.addEventListener('click', () => {
-                const userInput = moatInput.value.trim();
-                if (userInput) {
-                    // 1. Creiamo il prompt specifico per questa funzionalità
-                    const prompt = `Sei un product manager esperto in app basate su Python e data science. Per una web app nella nicchia "${userInput}", suggerisci 3 funzionalità avanzate che creino un "fossato competitivo" difficile da replicare. Per ogni funzionalità, descrivi: 1. Il nome della funzionalità (in grassetto), 2. Come sfrutta le librerie Python (es. Pandas, Scikit-learn, NLP), 3. Il valore strategico che offre all'utente finale. Formatta la risposta in modo chiaro.`;
-        
-                    // 2. Chiamiamo la stessa funzione generica, ma passando gli elementi corretti
-                    // (il loader e il contenitore dei risultati specifici per questa sezione)
-                    callGeminiAPI(prompt, moatLoader, moatResults);
+            // --- 3. EVENT LISTENERS (colleghiamo i pulsanti alle funzioni) ---
 
-                } else {
-                // 3. Mostriamo un messaggio di errore se l'input è vuoto
-                    moatResults.innerHTML = '<p>Per favore, inserisci un\'idea di app.</p>';
-                    moatResults.style.display = 'block';
+            // Navigazione principale e mobile
+            mainNav.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A') {
+                    e.preventDefault();
+                    updateView(e.target.dataset.view);
                 }
             });
+            
+            mobileNav.addEventListener('change', (e) => updateView(e.target.value));
 
+            // Selettore dei framework Python
+            frameworkSelector.addEventListener('click', (e) => {
+                const fw = e.target.dataset.fw;
+                if (fw) renderFrameworkDetails(fw);
+            });
+            
+            // Pulsante 1: Generatore di Idee di Nicchia
+            generateNicheBtn.addEventListener('click', () => {
                 const userInput = nicheInput.value.trim();
                 if (userInput) {
                     const prompt = `Sei un esperto stratega di startup. Data la seguente area di interesse generale: "${userInput}", genera 5 idee di nicchia specifiche per una web app. Per ogni idea, fornisci in formato chiaro e conciso: 1. Il nome dell'idea (in grassetto), 2. Il problema specifico che risolve, 3. Il pubblico target. Formatta la risposta in modo leggibile.`;
-                    callGeminiAPI(prompt, nicheLoader, nicheResults); 
-                        
-            
+                    callGeminiAPI(prompt, nicheLoader, nicheResults);
+                } else {
+                    nicheResults.innerHTML = '<p>Per favore, inserisci un\'area di interesse.</p>';
+                    nicheResults.style.display = 'block';
+                }
+            });
+
+            // Pulsante 2: Generatore di Fossati Competitivi
+            generateMoatBtn.addEventListener('click', () => {
+                const userInput = moatInput.value.trim();
+                if (userInput) {
+                    const prompt = `Sei un product manager esperto in app basate su Python e data science. Per una web app nella nicchia "${userInput}", suggerisci 3 funzionalità avanzate che creino un "fossato competitivo" difficile da replicare. Per ogni funzionalità, descrivi: 1. Il nome della funzionalità (in grassetto), 2. Come sfrutta le librerie Python (es. Pandas, Scikit-learn, NLP), 3. Il valore strategico che offre all'utente finale. Formatta la risposta in modo chiaro.`;
+                    callGeminiAPI(prompt, moatLoader, moatResults);
                 } else {
                     moatResults.innerHTML = '<p>Per favore, inserisci un\'idea di app.</p>';
                     moatResults.style.display = 'block';
@@ -444,12 +447,15 @@
             });
 
 
-            // Init
+            // --- 4. INIZIALIZZAZIONE DELLA PAGINA ---
+            
+            // Controlla l'hash nell'URL per mostrare la sezione corretta al caricamento
             const initialHash = window.location.hash.replace('#', '');
             if (['strategia', 'ricerca', 'validazione', 'costruzione', 'monetizzazione'].includes(initialHash)) {
                 appState.currentView = initialHash;
             }
             
+            // Esegui le funzioni per popolare la pagina
             renderView();
             renderFrameworkDetails('django');
             createValidationFunnelChart();
