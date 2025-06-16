@@ -372,42 +372,40 @@
                     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { const labels = { 'Pagamento': 'Validazione definitiva. L\'utente è disposto a pagare.', 'Uso dell\'MVP': 'Forte validazione. L\'utente investe tempo per usare il prodotto.', 'Iscrizione (Smoke Test)': 'Validazione iniziale. Interesse sufficiente per lasciare un\'email.' }; return labels[context.label]; } } } }, scales: { x: { beginAtZero: true, display: false }, y: { grid: { display: false } } } }
                 });
             }
-            
             async function callGeminiAPI(prompt, loaderElement, resultsElement) {
                 loaderElement.style.display = 'block';
                 resultsElement.innerHTML = '';
                 resultsElement.style.display = 'none';
 
-                
                 const proxyUrl = '/.netlify/functions/gemini-proxy';
+
                 try {
                     const response = await fetch(proxyUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
+            // VERSIONE CORRETTA:
+            // Costruiamo l'oggetto direttamente qui, usando la variabile "prompt"
+            // che viene passata alla funzione.
+                        body: JSON.stringify({ prompt: prompt }) 
                     });
 
                     if (!response.ok) {
-                        throw new Error(`Errore API: ${response.statusText}`);
+                        throw new Error(`Errore dal server: ${response.statusText}`);
                     }
 
                     const result = await response.json();
-                    
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts &&
-                        result.candidates[0].content.parts.length > 0) {
-                        
+        
+                    if (result.candidates && result.candidates.length > 0) {
                         let text = result.candidates[0].content.parts[0].text;
-                        // Basic markdown to HTML conversion
-                        text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Bold
-                        text = text.replace(/\n/g, '<br>'); // Newlines
+                        text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                        text = text.replace(/\n/g, '<br>');
                         resultsElement.innerHTML = text;
                     } else {
-                        resultsElement.innerHTML = '<p>Non è stato possibile ottenere una risposta valida dall\'IA. Riprova.</p>';
+                        throw new Error('La risposta dell\'IA non è valida o è vuota.');
                     }
                 } catch (error) {
-                    console.error('Errore chiamata Gemini API:', error);
-                    resultsElement.innerHTML = `<p class="text-red-600">Si è verificato un errore durante la generazione della risposta. Controlla la console per i dettagli e riprova.</p>`;
+                    console.error('Errore durante la chiamata alla funzione proxy:', error);
+                    resultsElement.innerHTML = `<p class="text-red-600">Si è verificato un errore. Controlla la console per i dettagli.</p>`;
                 } finally {
                     loaderElement.style.display = 'none';
                     resultsElement.style.display = 'block';
