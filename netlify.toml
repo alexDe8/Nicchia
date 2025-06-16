@@ -1,0 +1,9 @@
+# netlify.toml
+
+[build]
+  # Non abbiamo un processo di build, quindi la cartella di pubblicazione è la root.
+  publish = "." 
+
+[functions]
+  # Dice a Netlify dove trovare le nostre funzioni serverless.
+  directory = "netlify/functions/" 
